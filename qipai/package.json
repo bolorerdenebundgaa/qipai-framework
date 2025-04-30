@@ -1,0 +1,36 @@
+{
+  "name": "qipai",
+  "version": "0.0.1",
+  "description": "A JavaScript framework for quantum-inspired computing, focusing on energy efficiency and performance.",
+  "main": "api/index.js",
+  "type": "module",
+  "directories": {
+    "doc": "docs",
+    "example": "examples"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "docs:store": "open ./qipai-store/README.html"
+  },
+  "keywords": [
+    "quantum",
+    "quantum computing",
+    "quantum inspired",
+    "ai",
+    "machine learning",
+    "javascript",
+    "simulation",
+    "energy efficient",
+    "qdb"
+  ],
+  "author": "Your Name or Organization",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/your-username/qipai.git"
+  },
+  "bugs": {
+    "url": "https://github.com/your-username/qipai/issues"
+  },
+  "homepage": "https://github.com/your-username/qipai#readme"
+}

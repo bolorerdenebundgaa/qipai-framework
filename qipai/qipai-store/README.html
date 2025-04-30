@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QiPAI Store Documentation</title>
+    <style>
+        body { font-family: sans-serif; line-height: 1.6; padding: 20px; max-width: 900px; margin: auto; }
+        h1, h2, h3 { color: #333; }
+        code { background-color: #f4f4f4; padding: 2px 6px; border-radius: 4px; font-family: monospace; }
+        pre { background-color: #f4f4f4; padding: 15px; border-radius: 4px; overflow-x: auto; }
+        pre code { padding: 0; background-color: transparent; }
+        .module { border-left: 3px solid #007bff; padding-left: 15px; margin-bottom: 15px; }
+        .api-method { margin-bottom: 10px; }
+        .concept { border-left: 3px solid #28a745; padding-left: 15px; margin-bottom: 15px; }
+    </style>
+</head>
+<body>
+
+    <h1>QiPAI Store (`qipai-store`)</h1>
+    <p>The `qipai-store` module provides persistent storage and retrieval capabilities for quantum states (`QTensor` objects) within the QiPAI framework. It aims for efficiency and is designed to handle the specific needs of storing complex amplitudes, entanglement information, and associated metadata.</p>
+
+    <h2>Module Structure</h2>
+    <p>The store is organized into several submodules:</p>
+    <ul>
+        <li><strong>`format/`</strong>: Defines the binary serialization format for states and related data.
+            <ul>
+                <li><code>qstate.bin.js</code>: Handles encoding/decoding of the primary state binary format.</li>
+                <li><code>qindex.js</code>: Manages index structures for container files.</li>
+                <li><code>qmeta.js</code>: Encodes/decodes state metadata (using JSON initially).</li>
+            </ul>
+        </li>
+        <li><strong>`engine/`</strong>: Contains low-level reading, writing, and compression logic.
+            <ul>
+                <li><code>reader.js</code>: Low-level binary reader (potentially stream-based).</li>
+                <li><code>writer.js</code>: Low-level binary writer.</li>
+                <li><code>compressor.js</code>: Optional compression algorithms (RLE, Gzip, etc.).</li>
+            </ul>
+        </li>
+        <li><strong>`fs/`</strong>: Implements different filesystem storage strategies.
+            <ul>
+                <li><code>flatfile.js</code>: One state per file strategy.</li>
+                <li><code>container.js</code>: Multiple states within a single indexed file.</li>
+                <li><code>dirmapper.js</code>: Organizes flat files into directories based on IDs/metadata.</li>
+            </ul>
+        </li>
+         <li><strong>`query-engine/`</strong>: Provides the logic for querying the stored states.
+            <ul>
+                <li><code>queryBuilder.js</code>: Defines the chainable Functional Query API.</li>
+            </ul>
+        </li>
+        <li><strong>`index.js`</strong>: The main public API entry point for the module.</li>
+    </ul>
+
+    <h2>Binary Format (`qstate.bin`)</h2>
+    <p>The core storage format is designed to be compact and efficient:</p>
+    <pre><code>HEADER (fixed size)
+- Magic number (e.g., 4 bytes)
+- Version (e.g., 1 byte)
+- Num Qubits (e.g., 2 bytes)
+- Sparse Count (Number of non-zero amplitudes) (e.g., 4 bytes)
+- Entanglement Group Count (e.g., 2 bytes)
+- Metadata Length (e.g., 2 bytes)
+
+BODY
+- Sparse amplitudes: [index (uint16), real (float32), imag (float32)] × Sparse Count
+- Entanglement groups: [[q1_idx, q2_idx, ...], [qA_idx, qB_idx, ...], ...] (Encoded efficiently)
+- Metadata: UTF-8 JSON blob (or potentially MsgPack)</code></pre>
+    <p>This format prioritizes fast access to amplitude data and supports sparse states common in quantum simulations.</p>
+
+    <h2>Storage Strategies</h2>
+    <p>The store supports multiple ways to organize data on disk via the <code>strategy</code> option in <code>saveState</code> and <code>loadState</code>:</p>
+    <ul>
+        <li><strong>`flatfile`</strong>: Simple, one <code>.qstate.bin</code> file per quantum state. Requires a full file path.</li>
+        <li><strong>`container`</strong>: Efficient for many states. Stores multiple states in one large file with an internal index. Requires a container file path and a unique <code>stateId</code> for each state.</li>
+        <li><strong>`dirmapper`</strong>: Uses flat files but organizes them into directories based on <code>stateId</code> or metadata. Requires a base directory path and a <code>stateId</code>.</li>
+    </ul>
+
+    <h2>Functional Query API</h2>
+    <p>The primary way to interact with stored states beyond simple load/save is the Functional Query API, accessed via the <code>query()</code> method exported by `qipai-store/index.js`.</p>
+    <div class="module">
+        <h3><code>query(options)</code></h3>
+        <p>Creates a new <code>QueryBuilder</code> instance.</p>
+        <ul>
+            <li><code>options.storageOptions</code>: (Required) Object specifying the storage access details (e.g., <code>{ strategy: 'dirmapper', path: './my_states' }</code>).</li>
+        </ul>
+        <pre><code class="language-javascript">// Get a query builder for states stored in './data/run1' using dirmapper
+const qb = qStore.query({ storageOptions: { strategy: 'dirmapper', path: './data/run1' } });</code></pre>
+    </div>
+    <div class="module">
+        <h3><code>QueryBuilder</code> Methods</h3>
+        <p>The <code>QueryBuilder</code> provides chainable methods for filtering, acting upon, and retrieving states.</p>
+
+        <h4>Filtering Methods</h4>
+        <div class="api-method"><code>.whereMetadata({ key: value, ... })</code>: Filters based on metadata fields.</div>
+        <div class="api-method"><code>.wherePhaseNear(targetPhase, tolerance?)</code>: Filters states based on quantum phase characteristics (requires loading state).</div>
+        <div class="api-method"><code>.whereAmplitudeAbove(threshold, qubitIndices?)</code>: Filters states based on amplitude magnitudes (requires loading state).</div>
+        <div class="api-method"><code>.entangledWith(qubitIndexOrGroup)</code>: Filters states where specific qubits are entangled (requires loading state).</div>
+
+        <h4>Action Methods (Applied after filtering)</h4>
+         <div class="api-method"><code>.entangle(target)</code>: (Conceptual) Apply entanglement operation.</div>
+         <div class="api-method"><code>.interfere(otherState, options?)</code>: (Conceptual) Perform interference with another state.</div>
+         <div class="api-method"><code>.measure(basis?, targetQubits?)</code>: (Conceptual) Simulate measurement on retrieved states.</div>
+         <div class="api-method"><code>.collapse()</code>: (Conceptual) Collapse state according to previous measurement action.</div>
+
+        <h4>Execution Methods</h4>
+        <div class="api-method"><code>.limit(count)</code>: Limits the number of results.</div>
+        <div class="api-method"><code>.sort(field, direction?)</code>: Sorts results (likely based on metadata).</div>
+        <div class="api-method"><code>.listIds()</code>: Executes query to return only matching state IDs (potentially faster).</div>
+        <div class="api-method"><code>.run()</code>: Executes the full query, loads states, applies filters/actions, and returns resulting <code>QTensor</code> objects.</div>
+        <div class="api-method"><code>.output()</code>: Executes the query and returns the result of the final action (e.g., measurement outcome).</div>
+
+        <h4>Example</h4>
+        <pre><code class="language-javascript">import * as qStore from './qipai-store/index.js';
+
+async function findStates() {
+    const results = await qStore.query({ storageOptions: { strategy: 'dirmapper', path: './states/exp_C' } })
+      .whereMetadata({ status: 'processed', type: 'memory' })
+      .entangledWith(0) // Find states where qubit 0 is entangled
+      .limit(5)
+      .run(); // Execute and get QTensor objects
+
+    console.log(`Found ${results.length} states.`);
+    // Process results (array of QTensor objects)
+}</code></pre>
+    </div>
+
+    <h2>Semantic Search (Conceptual)</h2>
+    <div class="concept">
+        <p>A planned advanced feature is interference-based semantic search. Instead of filtering by exact metadata or properties, this would allow finding states that interfere constructively with an input state, representing a form of "meaning-based" retrieval.</p>
+        <pre><code class="language-javascript">// Conceptual Example
+const similarStates = await qStore.interferenceSearch({
+  storageOptions: { strategy: 'container', path: './memory.qdb' },
+  inputState: currentThoughtState, // A QTensor representing a concept/query
+  basis: "meaning", // Hypothetical basis for interference
+  maxResults: 10
+});</code></pre>
+    </div>
+
+    <h2>Performance Optimizations for Large-Scale Quantum States</h2>
+    <p>QiPAI-Store includes optimizations for handling large-scale quantum states (terabyte/petabyte level) through two key components:</p>
+    
+    <h3>Sparse Quantum Tensor Representation</h3>
+    <p>The <code>QTensorSparse</code> class provides a memory-efficient representation for quantum states:</p>
+    <ul>
+        <li><strong>Map-based storage</strong>: Only non-zero amplitudes are stored, dramatically reducing memory usage</li>
+        <li><strong>Efficient operations</strong>: Matrix operations optimized to compute only necessary elements</li>
+        <li><strong>API compatibility</strong>: Same interface as regular <code>QTensor</code>, making it easy to use</li>
+        <li><strong>Memory analysis tools</strong>: Utilities to analyze sparsity and compare memory usage</li>
+    </ul>
+    <pre><code class="language-javascript">// Example: Creating a sparse tensor for a 30-qubit state
+const sparseTensor = new QTensorSparse({
+    numQubits: 30,
+    nonzeroAmplitudes: new Map([
+        [0, qMath.complex(0.7071, 0)],  // |0...0⟩
+        [1073741823, qMath.complex(0.7071, 0)]  // |1...1⟩
+    ])
+});
+
+// Memory comparison with dense representation (30 qubits = 2^30 amplitudes)
+const memoryStats = sparseTensor.getMemoryComparison();
+// Result: { sparse: 40 bytes, dense: 17179869184 bytes, savingsPercent: 99.9999998% }</code></pre>
+
+    <h2>Distributed Architecture for Massive Scale</h2>
+    <p>For truly massive scale quantum state storage, QiPAI-Store includes a distributed architecture designed for terabyte/petabyte scale:</p>
+    
+    <div class="module">
+        <h3>Key Components</h3>
+        <ul>
+            <li><strong>Metadata Service</strong>: Distributed metadata database for efficient state lookups</li>
+            <li><strong>State Store Manager</strong>: Sharded storage of quantum states across multiple nodes</li>
+            <li><strong>Query Coordinator</strong>: Orchestrates distributed queries and parallel execution</li>
+            <li><strong>Distributed QStore API</strong>: Client-facing interface with the same API as single-node</li>
+        </ul>
+    </div>
+    
+    <div class="module">
+        <h3>Design Principles</h3>
+        <ul>
+            <li><strong>Separation of metadata and state data</strong>: For efficient querying</li>
+            <li><strong>Horizontal scalability</strong>: Add more nodes as data grows</li>
+            <li><strong>Consistent hashing</strong>: For balanced data distribution</li>
+            <li><strong>Parallel processing</strong>: Leverage multiple nodes for faster queries</li>
+            <li><strong>Adaptive compression</strong>: State-specific compression for storage efficiency</li>
+        </ul>
+    </div>
+    
+    <pre><code class="language-javascript">// Example: Creating a distributed store
+const store = new DistributedQStore({
+    metadata: {
+        type: 'elasticsearch',
+        endpoints: ['http://elasticsearch:9200']
+    },
+    stateStorage: {
+        type: 's3',
+        config: { bucket: 'quantum-states', region: 'us-west-2' },
+        shardingFactor: 32
+    }
+});
+
+// Usage mirrors the single-node API
+await store.saveState(qTensor, 'large-state-001', { tag: 'simulation' });
+const results = await store.query()
+    .whereMetadata({ tag: 'simulation' })
+    .limit(5)
+    .run();</code></pre>
+    
+    <h2>QiPAI-Store as a Standalone Database</h2>
+    
+    <p>QiPAI-Store has the architecture to function as a standalone quantum state database. A prototype server implementation exposes QQL operations through HTTP endpoints:</p>
+    
+    <h3>Server Implementation</h3>
+    <p>The server (<code>server.js</code>) provides HTTP endpoints for:</p>
+    <ul>
+        <li><strong>GET /api/states</strong>: List all quantum states</li>
+        <li><strong>POST /api/states</strong>: Create a new quantum state</li>
+        <li><strong>GET /api/states/:id</strong>: Retrieve a specific quantum state</li>
+        <li><strong>POST /api/qql</strong>: Execute QQL queries</li>
+    </ul>
+    
+    <h3>Client Library</h3>
+    <p>A JavaScript client (<code>client.js</code>) provides a simple interface:</p>
+    <pre><code class="language-javascript">const client = new QStoreClient();
+
+// Create a new quantum state
+await client.createState({
+    id: 'bell_state_01',
+    numQubits: 2,
+    metadata: { name: 'Bell State |00⟩ + |11⟩' },
+    amplitudes: {
+        0: { re: 1/Math.sqrt(2), im: 0 },  // |00⟩
+        3: { re: 1/Math.sqrt(2), im: 0 }   // |11⟩
+    }
+});
+
+// Execute QQL
+const result = await client.executeQQL({
+    qql: `
+        LOAD STATE s
+        WHERE s.metadata.name = "Bell State |00⟩ + |11⟩"
+        USING STORE { strategy: 'flatfile', path: '' }
+        MEASURE s ON QUBITS [0]
+        RETURN LAST_RESULT
+    `
+});</code></pre>
+
+    <h3>Path to a Full Database Solution</h3>
+    <p>To evolve into a full-fledged database, the following enhancements would be needed:</p>
+    <ul>
+        <li><strong>Server-Client Architecture</strong>: Network transport, authentication, concurrent connections</li>
+        <li><strong>ACID Transaction Support</strong>: Atomicity, consistency, isolation, durability</li>
+        <li><strong>Administration Tools</strong>: CLI, monitoring, backup/restore</li>
+        <li><strong>Query Optimization</strong>: Cost-based optimizer, execution plans, caching</li>
+        <li><strong>Enhanced QQL</strong>: Complex WHERE clauses, joins, aggregations</li>
+    </ul>
+    
+    <h3>Unique Value Proposition</h3>
+    <p>As a specialized database, QiPAI-Store offers advantages not found in traditional databases:</p>
+    <ul>
+        <li><strong>Quantum-Aware Query Language</strong>: Native understanding of quantum operations</li>
+        <li><strong>Optimized Storage</strong>: Purpose-built for quantum states and entanglement</li>
+        <li><strong>Domain-Specific Operators</strong>: Interference, entanglement, measurement</li>
+        <li><strong>Scale to TB/PB Level</strong>: For large-scale quantum simulation data</li>
+    </ul>
+    
+    <h3>Application Example: Quantum Chemistry</h3>
+    <p>A detailed example (<code>example-quantum-chemistry.js</code>) demonstrates how QiPAI-Store could serve as a specialized database for quantum chemistry applications:</p>
+    <ul>
+        <li>Storing molecular quantum states (H₂, H₂O) with metadata</li>
+        <li>Querying states by molecule type</li>
+        <li>Calculating energy differences between states</li>
+        <li>Simulating measurements for orbital occupation analysis</li>
+        <li>Creating superposition states to analyze bond dynamics</li>
+    </ul>
+
+    <h2>Quantum Query Language (QQL - Conceptual DSL)</h2>
+     <div class="concept">
+        <p>While the Functional API is the primary programmatic interface, a symbolic Domain Specific Language (DSL), QQL, is under development to provide a more declarative syntax for quantum operations on the store.</p>
+        <p><strong>Status:</strong> A custom, dependency-free engine (tokenizer, parser, interpreter) has been created in <code>qql-engine/</code>. It currently supports the following commands:</p>
+        <ul>
+            <li><code>LOAD STATE var WHERE metadata.key = "value" USING STORE { strategy: 'flatfile', path: '...' }</code>: Loads a state from a flatfile, decodes it (including amplitudes/entanglement), filters by metadata, and stores it in a variable.</li>
+            <li><code>INTERFERE targetVar WITH sourceVarOrContextVar</code>: Adds the state vectors of two variables (one can be from initial context), storing the (unnormalized) result in the target variable.</li>
+            <li><code>MEASURE stateVar [IN BASIS_X|BASIS_Y|BASIS_Z] ON QUBITS [idx1, idx2, ...]</code>: Sequentially measures the specified qubits of a loaded state in the specified basis. Collapses the state stored in the variable after each measurement and returns an array of outcomes (e.g., `[0, 1]`). 
+                <ul>
+                    <li>X-basis: Hadamard gates are applied before Z-measurement</li>
+                    <li>Y-basis: S† and Hadamard gates are applied before Z-measurement</li>
+                    <li>Z-basis: Direct computational basis measurement</li>
+                </ul>
+            </li>
+            <li><code>ENTANGLE targetVar WITH (stateVar | "symbol")</code>: Conceptually marks the target state variable as entangled with another state variable or a symbol (looked up/created via SymbolicMemory provided in context). Updates internal metadata.</li>
+            <li><code>RETURN stateVar | LAST_RESULT | COLLAPSE stateVar</code>: Specifies the final return value of the script execution. Can be a state variable (returns the `QTensor`), `LAST_RESULT` (returns the value produced by the preceding command, e.g., the outcome array from `MEASURE`), or `COLLAPSE stateVar` (returns the state variable, which will hold the collapsed state after a `MEASURE`).</li>
+        </ul>
+         <p>Other features (more complex WHERE clauses, specific qubit entanglement, other storage strategies for LOAD, etc.) are pending implementation.</p>
+        <h4>Supported Syntax Examples</h4>
+        <pre><code class="language-qql">-- Example 1: Basic operations with Z-basis measurement
+
+-- Load state 's' tagged "apple"
+LOAD STATE s
+WHERE s.metadata.tag = "apple"
+USING STORE { strategy: 'flatfile', path: './data/apple.qstate.bin' }
+
+-- Assume 'input_state' is passed in context
+-- Interfere input_state into s (s = s + input_state)
+INTERFERE s WITH input_state
+
+-- Entangle s with the symbolic concept "fruit"
+-- (Requires SymbolicMemory in interpreter context)
+ENTANGLE s WITH "fruit"
+
+-- Measure qubits 0 and 1 of the resulting state s (Z-basis)
+MEASURE s ON QUBITS [0, 1]
+
+-- Return the measurement outcomes (e.g., [0, 1] or [1, 0] etc.)
+RETURN LAST_RESULT
+
+-- Alternatively, to return the final collapsed state:
+-- RETURN s
+</code></pre>
+<pre><code class="language-qql">-- Example 2: With X-basis measurement and collapsed state return
+
+-- Load state 's' tagged "apple"
+LOAD STATE s
+WHERE s.metadata.tag = "apple"
+USING STORE { strategy: 'flatfile', path: './data/apple.qstate.bin' }
+
+-- Entangle with symbolic concept
+ENTANGLE s WITH "fruit"
+
+-- Interfere with input state from context
+INTERFERE s WITH input_state 
+
+-- Measure in X-basis (applies Hadamard gates before Z-measurement)
+MEASURE s IN BASIS_X ON QUBITS [0, 1]
+
+-- Return the collapsed state after measurement
+RETURN COLLAPSE s
+</code></pre>
+        <p>This QQL would aim to abstract the quantum operations into a more human-readable format, potentially useful for configuration files or higher-level tooling.</p>
+    </div>
+
+</body>
+</html>
