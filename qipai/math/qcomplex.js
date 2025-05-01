@@ -26,6 +26,11 @@ export function magnitude(c) {
   return Math.sqrt(c.re ** 2 + c.im ** 2);
 }
 
+export function squaredMagnitude(c) {
+  // More efficient than magnitude() ** 2 as it avoids sqrt
+  return c.re ** 2 + c.im ** 2;
+}
+
 export function phase(c) {
   return Math.atan2(c.im, c.re);
 }

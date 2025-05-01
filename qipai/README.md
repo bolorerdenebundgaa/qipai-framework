@@ -2,6 +2,10 @@
 
 QiPAI is a comprehensive JavaScript framework that combines quantum computing principles with modern AI techniques, designed to bridge the gap between classical computation and quantum algorithms.
 
+<p align="center">
+  <img src="https://via.placeholder.com/800x400?text=QiPAI+Framework" alt="QiPAI Framework" width="800" />
+</p>
+
 ## 🌟 Core Features
 
 - **Quantum Circuit Simulation**: Full simulation of quantum circuits with support for all standard gates
@@ -13,30 +17,64 @@ QiPAI is a comprehensive JavaScript framework that combines quantum computing pr
 
 ## 🚀 Getting Started
 
-### Installation
+### Setup
 
 ```bash
-npm install qipai
+# Clone the repository
+git clone https://github.com/qipai/qipai.git
+cd qipai
+
+# Install dependencies
+npm install
+```
+
+### Running Examples
+
+```bash
+# Run the getting started example (Bell state)
+npm start
+
+# Start the browser demo server
+npm run demo
+# Then visit http://localhost:8000/examples/browser-demo.html in your browser
+
+# Run specific examples
+npm run qft-demo      # Quantum Fourier Transform
+npm run agent-demo    # Autonomous Agent
+npm run qnn-demo      # Quantum Neural Network
+npm run lang-demo     # Quantum Language
+npm run viz-demo      # 3D Visualization
 ```
 
 ### Basic Usage
 
 ```javascript
-import { createCircuit, createState, visualizeCircuit } from 'qipai';
+import { createCircuit, createState, visualizeCircuit } from './index.js';
+import * as Gates from './core/gates.js';
 
 // Create a Bell state circuit
 const circuit = createCircuit(2);
-circuit.addGate('h', 0);       // Hadamard on qubit 0
-circuit.addGate('cnot', 1, 0); // CNOT: qubit 0 controls qubit 1
+circuit.addGate(Gates.H, [0]);       // Hadamard on qubit 0
+circuit.addGate(Gates.CNOT, [1], [0]); // CNOT: qubit 0 controls qubit 1
 
 // Execute circuit
 const initialState = createState(2);   // |00⟩ state
 const bellState = circuit.run(initialState);
 
-// Visualize results
+// Visualize results (in browser environment)
 const circuitVisual = visualizeCircuit(circuit);
 const stateVisual = visualizeState(bellState);
 ```
+
+### Running in Browser
+
+For visualization features, run the browser demo:
+
+```bash
+npm run demo
+```
+
+Then open `http://localhost:8000/examples/browser-demo.html` in your browser to see the interactive demos.
 
 ## 🧩 Architecture
 

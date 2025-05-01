@@ -5,6 +5,7 @@
  */
 
 import * as qMath from '../math/qmath.js';
+import { measureQubit } from './qMeasure.js'; // Import measurement function (Corrected name)
 
 export class QTensor {
     /**
@@ -188,5 +189,118 @@ export class QTensor {
 
     // TODO: Add methods for tensor product (combining QTensor instances).
     // TODO: Add methods for partial trace (reducing QTensor instances).
-    // TODO: Add methods for accessing specific amplitudes (e.g., getAmplitude([0, 1])).
+    /**
+     * Gets the complex amplitude for a specific basis state index.
+     * @param {number} index - The index of the basis state (0 to 2^numQubits - 1).
+     * @returns {{re: number, im: number}} The complex amplitude.
+     */
+    getAmplitude(index) {
+        if (index < 0 || index >= this.dimension) {
+            throw new Error(`Amplitude index ${index} out of bounds for dimension ${this.dimension}`);
+        }
+        // Return a copy to prevent external modification
+        const amp = this.stateVector[index];
+        return { re: amp.re, im: amp.im };
+    }
+
+    /**
+     * Creates a deep copy of this QTensor instance.
+     * @returns {QTensor} A new QTensor instance with the same state and entanglement.
+     */
+    clone() {
+        const clonedVector = this.stateVector.map(c => ({ ...c }));
+        const clonedEntanglement = new Map();
+        // Deep copy the entanglement map (Sets are copied by reference, which is okay here)
+        this.entanglement.forEach((groupSet, qubitIndex) => {
+            clonedEntanglement.set(qubitIndex, groupSet);
+        });
+        return new QTensor(clonedVector, {
+            isNormalized: true, // Already normalized
+            entanglementMap: clonedEntanglement
+        });
+    }
+
+    /**
+     * Performs a measurement on the quantum state.
+     * This collapses the state to one of the basis states based on probabilities.
+     * @param {Array<number>} [qubitsToMeasure] - Optional array of qubit indices to measure. If omitted, measures all qubits.
+     * @returns {QTensor} The collapsed state after measurement (this instance is modified).
+     */
+    measure(qubitsToMeasure = null) {
+        // Determine which qubits to measure
+        let measuredQubits = [];
+        if (qubitsToMeasure === null) {
+            // Measure all qubits if none specified
+            measuredQubits = Array.from({ length: this.numQubits }, (_, i) => i);
+        } else if (Array.isArray(qubitsToMeasure)) {
+            measuredQubits = qubitsToMeasure;
+        } else if (typeof qubitsToMeasure === 'number') {
+            measuredQubits = [qubitsToMeasure];
+        } else {
+            throw new Error("Invalid qubitsToMeasure argument. Must be null, number, or array.");
+        }
+
+        // Sequentially measure each specified qubit.
+        // measureQubit now modifies 'this' tensor in place and returns the outcome (0 or 1).
+        // Note: Sequential measurement is not the same as simultaneous multi-qubit measurement,
+        // but it's a common simulation approach.
+        for (const qubitIndex of measuredQubits) {
+             if (qubitIndex < 0 || qubitIndex >= this.numQubits) {
+                 console.warn(`Skipping measurement of invalid qubit index: ${qubitIndex}`);
+                 continue;
+             }
+             // measureQubit modifies 'this' tensor directly
+             measureQubit(this, qubitIndex);
+        }
+
+        // After all measurements, the state vector in 'this' is collapsed.
+        // Find the index of the single non-zero amplitude which represents the outcome.
+        let collapsedIndex = -1;
+        for (let i = 0; i < this.dimension; i++) {
+            const amp = this.stateVector[i];
+            // Check if the squared magnitude is close to 1
+            if (qMath.squaredMagnitude(amp) > 0.9999) {
+                collapsedIndex = i;
+                break;
+            }
+        }
+
+        if (collapsedIndex === -1) {
+             // This might happen due to floating point errors or if the state was invalid.
+             console.warn("Could not definitively determine collapsed state index after measurement. Finding largest amplitude.");
+             // Fallback: find the index with the largest probability
+             let maxProb = -1;
+             for (let i = 0; i < this.dimension; i++) {
+                 const prob = qMath.squaredMagnitude(this.stateVector[i]);
+                 if (prob > maxProb) {
+                     maxProb = prob;
+                     collapsedIndex = i;
+                 }
+             }
+             if (collapsedIndex === -1) collapsedIndex = 0; // Final fallback
+        }
+
+        // Store the final collapsed index for toBitString()
+        this._lastMeasurementOutcome = collapsedIndex;
+
+        return this; // Return the modified instance (now collapsed)
+    }
+
+    /**
+     * Converts the last measurement outcome to a bit string.
+     * Assumes measure() was called immediately before.
+     * @returns {string} The bit string representation of the measurement outcome.
+     */
+    toBitString() {
+        if (this._lastMeasurementOutcome === undefined || this._lastMeasurementOutcome === null) {
+            throw new Error("No measurement outcome available. Call measure() first.");
+        }
+        const bitString = this._lastMeasurementOutcome.toString(2).padStart(this.numQubits, '0');
+        // Clear the temporary outcome
+        // delete this._lastMeasurementOutcome;
+        return bitString;
+    }
+
+    // TODO: Add methods for tensor product (combining QTensor instances).
+    // TODO: Add methods for partial trace (reducing QTensor instances).
 }

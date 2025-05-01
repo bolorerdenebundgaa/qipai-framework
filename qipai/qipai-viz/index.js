@@ -16,7 +16,7 @@ export { Visualizer3D } from './Visualizer3D.js';
  * @returns {CircuitVisualizer} Circuit visualizer instance
  */
 export function createCircuitVisualizer(options = {}) {
-    const { CircuitVisualizer } = require('./CircuitVisualizer.js');
+    // Use the already imported CircuitVisualizer
     return new CircuitVisualizer(options);
 }
 
@@ -26,7 +26,7 @@ export function createCircuitVisualizer(options = {}) {
  * @returns {StateVisualizer} State visualizer instance
  */
 export function createStateVisualizer(options = {}) {
-    const { StateVisualizer } = require('./StateVisualizer.js');
+    // Use the already imported StateVisualizer
     return new StateVisualizer(options);
 }
 
@@ -58,7 +58,7 @@ export function visualizeState(state, options = {}) {
  * @returns {Visualizer3D} 3D visualizer instance
  */
 export function create3DVisualizer(options = {}) {
-    const { Visualizer3D } = require('./Visualizer3D.js');
+    // Use the already imported Visualizer3D
     return new Visualizer3D(options);
 }
 

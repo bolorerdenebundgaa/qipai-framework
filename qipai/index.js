@@ -33,13 +33,19 @@ export * as qHardware from './qipai-hardware/index.js';
 export * from './api/qipai.js';
 export * from './api/config.js';
 
+// Import classes directly for browser compatibility
+import { QCircuit } from './core/qCircuit.js';
+import { QTensor } from './core/qTensor.js';
+import { visualizeCircuit as vizCircuit, visualizeState as vizState } from './qipai-viz/index.js';
+import { compileQiPAICode as compileCode } from './qipai-lang/index.js';
+import { IBMQAdapter } from './qipai-hardware/ibmq/IBMQAdapter.js';
+
 /**
  * Create a quantum circuit
  * @param {number} numQubits - Number of qubits in the circuit
  * @returns {QCircuit} Quantum circuit
  */
 export function createCircuit(numQubits) {
-    const { QCircuit } = require('./core/qCircuit.js');
     return new QCircuit(numQubits);
 }
 
@@ -49,28 +55,29 @@ export function createCircuit(numQubits) {
  * @returns {QTensor} Quantum state
  */
 export function createState(numQubits) {
-    const { QTensor } = require('./core/qTensor.js');
     return new QTensor(numQubits);
 }
 
 /**
  * Create a quantum neural network
  * @param {Object} options - Neural network options
- * @returns {QuantumNeuralNetwork} Quantum neural network
+ * @returns {Promise<QuantumNeuralNetwork>} Quantum neural network
  */
-export function createQuantumNeuralNetwork(options = {}) {
-    const { createSimpleQNN } = require('./qipai-neuro/index.js');
-    return createSimpleQNN(options);
+export async function createQuantumNeuralNetwork(options = {}) {
+    // Use direct import to avoid require()
+    const { QuantumNeuralNetwork } = await import('./qipai-neuro/QuantumNeuralNetwork.js');
+    return new QuantumNeuralNetwork(options);
 }
 
 /**
  * Create an autonomous agent
  * @param {Object} options - Agent options
- * @returns {PhaseAgent} Quantum-inspired agent
+ * @returns {Promise<PhaseAgent>} Quantum-inspired agent
  */
-export function createAgent(options = {}) {
-    const { createAgent } = require('./qipai-agent/index.js');
-    return createAgent(options);
+export async function createAgent(options = {}) {
+    // Use direct import to avoid require()
+    const { PhaseAgent } = await import('./qipai-agent/PhaseAgent.js');
+    return new PhaseAgent(options);
 }
 
 /**
@@ -80,8 +87,7 @@ export function createAgent(options = {}) {
  * @returns {Object} Compiled circuits
  */
 export function compileQiPAICode(code, options = {}) {
-    const { compileQiPAICode } = require('./qipai-lang/index.js');
-    return compileQiPAICode(code, options);
+    return compileCode(code, options);
 }
 
 /**
@@ -91,8 +97,7 @@ export function compileQiPAICode(code, options = {}) {
  * @returns {string} HTML visualization
  */
 export function visualizeCircuit(circuit, options = {}) {
-    const { visualizeCircuit } = require('./qipai-viz/index.js');
-    return visualizeCircuit(circuit, options);
+    return vizCircuit(circuit, options);
 }
 
 /**
@@ -102,8 +107,7 @@ export function visualizeCircuit(circuit, options = {}) {
  * @returns {string} HTML visualization
  */
 export function visualizeState(state, options = {}) {
-    const { visualizeState } = require('./qipai-viz/index.js');
-    return visualizeState(state, options);
+    return vizState(state, options);
 }
 
 /**
@@ -112,8 +116,6 @@ export function visualizeState(state, options = {}) {
  * @returns {Object} Hardware adapter
  */
 export function connectToQuantumHardware(options = {}) {
-    const { IBMQAdapter } = require('./qipai-hardware/ibmq/IBMQAdapter.js');
-    
     const adapter = new IBMQAdapter(options);
     return adapter.connect().then(() => adapter);
 }

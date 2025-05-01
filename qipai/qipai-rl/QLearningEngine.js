@@ -13,7 +13,7 @@ import { QCircuit } from '../core/qCircuit.js';
 import * as Gates from '../core/gates.js';
 import * as qMath from '../math/qmath.js';
 import { PhaseMemory } from '../memory/PhaseMemory.js';
-import { qOptimizer } from '../training/qOptimizer.js';
+import { QOptimizer } from '../training/qOptimizer.js';
 
 /**
  * Quantum Reinforcement Learning Engine
@@ -55,7 +55,7 @@ export class QLearningEngine {
         this.valueParams = this._initializeParameters(this.valueCircuit.paramCount);
         
         // Optimizer
-        this.optimizer = new qOptimizer({
+        this.optimizer = new QOptimizer({
             type: options.optimizer || 'adam',
             learningRate: options.learningRate || 0.001
         });

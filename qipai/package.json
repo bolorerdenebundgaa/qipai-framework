@@ -1,36 +1,51 @@
 {
   "name": "qipai",
-  "version": "0.0.1",
-  "description": "A JavaScript framework for quantum-inspired computing, focusing on energy efficiency and performance.",
-  "main": "api/index.js",
+  "version": "0.1.0",
+  "description": "Quantum-inspired AI Framework",
   "type": "module",
-  "directories": {
-    "doc": "docs",
-    "example": "examples"
-  },
+  "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "docs:store": "open ./qipai-store/README.html"
+    "start": "node examples/getting-started.js",
+    "serve": "npx http-server -p 8000",
+    "demo": "npm run serve",
+    "qft-demo": "node examples/qft-example.js",
+    "agent-demo": "node qipai-agent/examples/agent-example.js",
+    "qnn-demo": "node qipai-neuro/examples/classification-example.js",
+    "lang-demo": "node qipai-lang/examples/language-example.js",
+    "viz-demo": "node qipai-viz/examples/visualization3d-example.js",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/qipai/qipai.git"
   },
   "keywords": [
     "quantum",
-    "quantum computing",
-    "quantum inspired",
     "ai",
-    "machine learning",
-    "javascript",
-    "simulation",
-    "energy efficient",
-    "qdb"
+    "quantum-computing",
+    "machine-learning",
+    "neural-networks",
+    "autonomous-agents",
+    "quantum-language",
+    "quantum-visualization"
   ],
-  "author": "Your Name or Organization",
+  "author": "QiPAI Team",
   "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/your-username/qipai.git"
+  "engines": {
+    "node": ">=14.0.0"
   },
-  "bugs": {
-    "url": "https://github.com/your-username/qipai/issues"
+  "dependencies": {
+    "three": "^0.150.0",
+    "mathjs": "^11.8.0"
   },
-  "homepage": "https://github.com/your-username/qipai#readme"
+  "devDependencies": {
+    "http-server": "^14.1.1",
+    "jest": "^29.5.0"
+  },
+  "browserslist": [
+    "> 1%",
+    "last 2 versions",
+    "not dead",
+    "not ie 11"
+  ]
 }

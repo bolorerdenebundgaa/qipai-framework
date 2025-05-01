@@ -1,62 +1,114 @@
 /**
  * dirmapper.js
- * Implements a storage strategy using directory structures to organize
- * flat state files based on metadata or IDs.
- * (e.g., /baseDir/experiment_A/run_001/state_t5.qstate.bin)
+ * Implements a storage strategy using hierarchical structures to organize
+ * state files based on metadata or IDs.
+ * Provides cross-platform (browser + Node.js) implementation.
  */
 
 import { saveStateToFile, loadStateFromFile } from './flatfile.js';
-// Need filesystem access for directory creation (Node.js 'fs/promises' or browser equivalent)
-// import { mkdir } from 'fs/promises'; // Example for Node.js
-// import path from 'path'; // Node.js path manipulation
 
-// TODO: Implement logic to map state IDs/metadata to directory paths.
-// TODO: Implement directory creation logic.
+// Detect environment
+const isBrowser = typeof window !== 'undefined' && typeof window.document !== 'undefined';
 
 /**
- * Generates a file path based on a state ID and/or metadata.
- * @param {string} baseDir - The base directory for storage.
+ * Creates a directory structure in browser storage.
+ * In browsers, this is a no-op as storage APIs handle paths automatically.
+ * @param {string} dirPath - The directory path to create.
+ * @returns {Promise<boolean>} - Success status
+ */
+async function ensureDirectoryExists(dirPath) {
+    if (isBrowser) {
+        // In browser, storage APIs handle hierarchy automatically
+        return true;
+    } else {
+        try {
+            // In Node.js, we need to create directories
+            const fs = await import('fs/promises');
+            await fs.mkdir(dirPath, { recursive: true });
+            return true;
+        } catch (error) {
+            console.error(`Failed to create directory ${dirPath}:`, error);
+            return false;
+        }
+    }
+}
+
+/**
+ * Generates a storage key/path based on a state ID and/or metadata.
+ * @param {string} baseDir - The base directory/namespace for storage.
  * @param {string} stateId - A unique identifier for the state.
  * @param {object} metadata - Optional metadata to use for path generation.
- * @returns {string} The generated file path.
+ * @returns {string} The generated key/path.
  */
 function mapStateToPath(baseDir, stateId, metadata = {}) {
-    // Example mapping: baseDir/stateId.qstate.bin
-    // More complex mapping could use metadata.experiment, metadata.run, etc.
-    // const filePath = path.join(baseDir, `${stateId}.qstate.bin`); // Node.js example
-    const filePath = `${baseDir}/${stateId}.qstate.bin`; // Simple example
-    console.warn("Dirmapper path generation logic might need refinement.");
-    return filePath;
+    // Build a path based on metadata if available
+    let path = baseDir;
+    
+    // Add experiment path component if available
+    if (metadata.experiment) {
+        path += `/experiment_${metadata.experiment}`;
+    }
+    
+    // Add run path component if available
+    if (metadata.run !== undefined) {
+        path += `/run_${String(metadata.run).padStart(3, '0')}`;
+    }
+    
+    // Add timestamp path component if available
+    if (metadata.timestamp) {
+        // Format timestamp as ISO date without special characters
+        const timestamp = metadata.timestamp instanceof Date 
+            ? metadata.timestamp.toISOString().replace(/[:.]/g, '-')
+            : String(metadata.timestamp);
+        path += `/t_${timestamp}`;
+    }
+    
+    // Add the state ID and extension
+    path += `/${stateId}.qstate.bin`;
+    
+    return path;
 }
 
 /**
  * Saves a state using a directory mapping strategy.
- * @param {string} baseDir - The base directory for storage.
+ * @param {string} baseDir - The base directory/namespace for storage.
  * @param {string} stateId - A unique identifier for the state.
  * @param {QTensor} qTensor - The state to save.
  * @param {object} metadata - Optional metadata to include and use for mapping.
+ * @returns {Promise<boolean>} - Success status
  */
 export async function saveStateMapped(baseDir, stateId, qTensor, metadata = {}) {
-    const filePath = mapStateToPath(baseDir, stateId, metadata);
-    const dirPath = filePath.substring(0, filePath.lastIndexOf('/')); // Get directory part
-
-    // Ensure directory exists
-    // await mkdir(dirPath, { recursive: true }); // Node.js example
-    console.warn(`Directory creation for ${dirPath} not implemented.`);
-
-    // Save the state using the flatfile strategy
-    await saveStateToFile(qTensor, filePath, metadata);
+    try {
+        const path = mapStateToPath(baseDir, stateId, metadata);
+        
+        if (!isBrowser) {
+            // In Node.js, ensure directory structure exists
+            const dirPath = path.substring(0, path.lastIndexOf('/'));
+            await ensureDirectoryExists(dirPath);
+        }
+        
+        // Save the state using the flatfile strategy (which handles browser/Node.js differences)
+        return await saveStateToFile(qTensor, path, metadata);
+    } catch (error) {
+        console.error(`Failed to save mapped state ${stateId}:`, error);
+        return false;
+    }
 }
 
 /**
  * Loads a state using a directory mapping strategy.
  * @param {string} baseDir - The base directory for storage.
  * @param {string} stateId - A unique identifier for the state.
- * @param {object} metadata - Optional metadata used for mapping (if needed).
+ * @param {object} metadata - Optional metadata used for mapping.
  * @returns {Promise<{qTensor: QTensor, metadata: object}>} - The loaded state and metadata.
  */
 export async function loadStateMapped(baseDir, stateId, metadata = {}) {
-     const filePath = mapStateToPath(baseDir, stateId, metadata);
-     // Load the state using the flatfile strategy
-     return await loadStateFromFile(filePath);
+    try {
+        const path = mapStateToPath(baseDir, stateId, metadata);
+        // Load using the flatfile strategy
+        return await loadStateFromFile(path);
+    } catch (error) {
+        console.error(`Failed to load mapped state ${stateId}:`, error);
+        return { qTensor: null, metadata: {} };
+    }
 }

@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>QiPAI Framework Demo</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1, h2, h3 {
+            color: #2c3e50;
+        }
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .viz-box {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 20px;
+            margin-bottom: 20px;
+            background-color: #f9f9f9;
+        }
+        #results {
+            font-family: monospace;
+            white-space: pre;
+            background-color: #f1f1f1;
+            padding: 15px;
+            border-radius: 5px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .container > div {
+            flex: 1 1 45%;
+            min-width: 300px;
+        }
+        button {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        nav {
+            background-color: #333;
+            overflow: hidden;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+        nav a {
+            float: left;
+            color: white;
+            text-align: center;
+            padding: 14px 16px;
+            text-decoration: none;
+            font-size: 17px;
+        }
+        nav a:hover {
+            background-color: #ddd;
+            color: black;
+        }
+        nav a.active {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <h1>QiPAI Framework Interactive Demo</h1>
+    <p>This interactive demo showcases the capabilities of the QiPAI quantum-inspired AI framework.</p>
+    
+    <nav id="demo-nav">
+        <a href="#" class="active" data-tab="bell-state">Bell State</a>
+        <a href="#" data-tab="qft">Quantum Fourier Transform</a>
+        <a href="#" data-tab="qnn">Quantum Neural Network</a>
+        <a href="#" data-tab="agent">Autonomous Agent</a>
+        <a href="#" data-tab="qml">Quantum Language</a>
+    </nav>
+    
+    <!-- Bell State Demo -->
+    <div id="bell-state" class="tab-content active">
+        <h2>Bell State Example</h2>
+        <p>A Bell state is a maximally entangled quantum state of two qubits. In this example, we create the Bell state |Φ+⟩ = (|00⟩ + |11⟩)/√2.</p>
+        
+        <button id="run-bell-demo">Run Bell State Demo</button>
+        
+        <div class="container">
+            <div>
+                <h3>Quantum Circuit</h3>
+                <div class="viz-box" id="bell-circuit-viz"></div>
+            </div>
+            <div>
+                <h3>Quantum State</h3>
+                <div class="viz-box" id="bell-state-viz"></div>
+            </div>
+        </div>
+        
+        <h3>Measurement Results</h3>
+        <div id="bell-results" class="results">Run the demo to see measurement results</div>
+    </div>
+    
+    <!-- QFT Demo -->
+    <div id="qft" class="tab-content">
+        <h2>Quantum Fourier Transform</h2>
+        <p>The Quantum Fourier Transform (QFT) is a quantum version of the discrete Fourier transform, and a key component in many quantum algorithms.</p>
+        
+        <button id="run-qft-demo">Run QFT Demo</button>
+        
+        <div class="container">
+            <div>
+                <h3>QFT Circuit</h3>
+                <div class="viz-box" id="qft-circuit-viz"></div>
+            </div>
+            <div>
+                <h3>State Visualization</h3>
+                <div class="viz-box" id="qft-state-viz"></div>
+            </div>
+        </div>
+        
+        <h3>Output State Information</h3>
+        <div id="qft-results" class="results">Run the demo to see QFT output</div>
+    </div>
+    
+    <!-- QNN Demo -->
+    <div id="qnn" class="tab-content">
+        <h2>Quantum Neural Network</h2>
+        <p>This example demonstrates a simple quantum neural network performing binary classification.</p>
+        
+        <button id="run-qnn-demo">Run QNN Demo</button>
+        
+        <div class="container">
+            <div>
+                <h3>Network Architecture</h3>
+                <div class="viz-box" id="qnn-architecture-viz"></div>
+            </div>
+            <div>
+                <h3>Classification Results</h3>
+                <div class="viz-box" id="qnn-results-viz"></div>
+            </div>
+        </div>
+        
+        <h3>Training Progress</h3>
+        <div id="qnn-results" class="results">Run the demo to see training results</div>
+    </div>
+    
+    <!-- Agent Demo -->
+    <div id="agent" class="tab-content">
+        <h2>Quantum-Inspired Autonomous Agent</h2>
+        <p>This example demonstrates a quantum-inspired agent navigating through a grid environment to reach a goal.</p>
+        
+        <button id="run-agent-demo">Run Agent Demo</button>
+        
+        <div class="container">
+            <div>
+                <h3>Environment</h3>
+                <div class="viz-box" id="agent-environment-viz"></div>
+            </div>
+            <div>
+                <h3>Agent Reasoning</h3>
+                <div class="viz-box" id="agent-reasoning-viz"></div>
+            </div>
+        </div>
+        
+        <h3>Planning Results</h3>
+        <div id="agent-results" class="results">Run the demo to see agent planning</div>
+    </div>
+    
+    <!-- QLang Demo -->
+    <div id="qml" class="tab-content">
+        <h2>QiPAI Quantum Language</h2>
+        <p>This example demonstrates using the QiPAI quantum programming language to define and execute quantum circuits.</p>
+        
+        <button id="run-qlang-demo">Run Language Demo</button>
+        
+        <div class="container">
+            <div>
+                <h3>QiPAI Language Code</h3>
+                <div class="viz-box" id="qlang-code-viz"></div>
+            </div>
+            <div>
+                <h3>Compiled Circuit</h3>
+                <div class="viz-box" id="qlang-circuit-viz"></div>
+            </div>
+        </div>
+        
+        <h3>Execution Results</h3>
+        <div id="qlang-results" class="results">Run the demo to see compilation and execution results</div>
+    </div>
+    
+    <script type="module">
+        // Import all from main index for browser compatibility
+        import { 
+            createCircuit, 
+            createState, 
+            visualizeCircuit, 
+            visualizeState,
+            compileQiPAICode,
+            QCircuit,
+            QTensor
+        } from '../index.js';
+
+        // Import Gates separately as we need the whole namespace
+        import * as Gates from '../core/gates.js';
+
+        // Import helper functions
+        import { createBellState, measureBellState } from './getting-started.js';
+
+        // Import Visualizer classes directly
+        import { CircuitVisualizer } from '../qipai-viz/CircuitVisualizer.js';
+        import { StateVisualizer } from '../qipai-viz/StateVisualizer.js';
+
+        // Import QNN classes directly
+        import { QuantumNeuralNetwork } from '../qipai-neuro/QuantumNeuralNetwork.js';
+        import { VariationalQuantumLayer } from '../qipai-neuro/VariationalQuantumLayer.js';
+
+        // Import QNN example data generator
+        import { generateCircleDataset } from '../qipai-neuro/examples/classification-example.js';
+        
+        // Tab Navigation
+        document.querySelectorAll('#demo-nav a').forEach(tab => {
+            tab.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                // Update active tab
+                document.querySelectorAll('#demo-nav a').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+                
+                // Hide all tab content
+                document.querySelectorAll('.tab-content').forEach(content => {
+                    content.classList.remove('active');
+                });
+                
+                // Show selected tab content
+                const tabId = this.getAttribute('data-tab');
+                document.getElementById(tabId).classList.add('active');
+            });
+        });
+        
+        // Bell State Demo
+        document.getElementById('run-bell-demo').addEventListener('click', async function() {
+            const resultsDiv = document.getElementById('bell-results');
+            resultsDiv.innerHTML = 'Running Bell state demo...';
+            
+            try {
+                // Create Bell state
+                console.log('Creating Bell state...');
+                const { circuit, state } = createBellState();
+                console.log('Bell state created successfully:', state);
+                
+                try {
+                    // Visualize circuit directly
+                    console.log('Visualizing circuit...');
+                    const circuitVisualizer = new CircuitVisualizer();
+                    const circuitHTML = circuitVisualizer.generateHTML(circuit);
+                    document.getElementById('bell-circuit-viz').innerHTML = circuitHTML;
+                    console.log('Circuit visualization successful');
+                } catch (vizError) {
+                    console.error('Circuit visualization error:', vizError);
+                    document.getElementById('bell-circuit-viz').innerHTML = '<div style="padding: 20px; background-color: #ffeeee; border: 1px solid #ffaaaa;">Error visualizing circuit: ' + vizError.message + '</div>';
+                }
+
+                try {
+                    // Visualize state directly
+                    console.log('Visualizing state...');
+                    const stateVisualizer = new StateVisualizer();
+                    const stateHTML = stateVisualizer.generateHTML(state);
+                    document.getElementById('bell-state-viz').innerHTML = stateHTML;
+                    console.log('State visualization successful');
+                } catch (vizError) {
+                    console.error('State visualization error:', vizError);
+                    document.getElementById('bell-state-viz').innerHTML = '<div style="padding: 20px; background-color: #ffeeee; border: 1px solid #ffaaaa;">Error visualizing state: ' + vizError.message + '</div>';
+                }
+                
+                // Measure Bell state
+                console.log('Measuring Bell state...');
+                const results = measureBellState(state);
+                
+                // Display results
+                let resultsText = 'Bell State Measurement Results:\n\n';
+                for (const [bitString, count] of Object.entries(results)) {
+                    resultsText += `|${bitString}⟩: ${count} (${(count/1000*100).toFixed(1)}%)\n`;
+                }
+                resultsDiv.textContent = resultsText;
+                
+                console.log('Bell state demo completed successfully!');
+            } catch (error) {
+                resultsDiv.textContent = 'Error running Bell state demo: ' + error.message;
+                console.error('Bell state demo error:', error);
+                // Log full error details
+                console.error('Error details:', {
+                    name: error.name,
+                    message: error.message,
+                    stack: error.stack
+                });
+            }
+        });
+        
+        // QFT Demo
+        document.getElementById('run-qft-demo').addEventListener('click', async function() {
+            const resultsDiv = document.getElementById('qft-results');
+            resultsDiv.innerHTML = 'Running QFT demo...';
+            
+            try {
+                // Create a 3-qubit QFT circuit
+                const qftCircuit = new QCircuit(3);
+                
+                // Add QFT gates
+                qftCircuit.addGate(Gates.H, [0]);
+                qftCircuit.addGate(Gates.CPHASE, [0], [1], Math.PI/2);
+                qftCircuit.addGate(Gates.CPHASE, [0], [2], Math.PI/4);
+                qftCircuit.addGate(Gates.H, [1]);
+                qftCircuit.addGate(Gates.CPHASE, [1], [2], Math.PI/2);
+                qftCircuit.addGate(Gates.H, [2]);
+                
+                // Add SWAP gates to match standard QFT output ordering
+                qftCircuit.addGate(Gates.SWAP, [0, 2]);
+
+                // Visualize circuit directly
+                const circuitVisualizer = new CircuitVisualizer();
+                const circuitHTML = circuitVisualizer.generateHTML(qftCircuit);
+                document.getElementById('qft-circuit-viz').innerHTML = circuitHTML;
+
+                // Create input state |001⟩ (binary 1)
+                const initialState = new QTensor(3);
+                initialState.setState(1); // Set to |001⟩
+                
+                // Run QFT circuit
+                const qftState = qftCircuit.run(initialState);
+
+                // Visualize output state directly
+                const stateVisualizer = new StateVisualizer();
+                const stateHTML = stateVisualizer.generateHTML(qftState, { showPhase: true });
+                document.getElementById('qft-state-viz').innerHTML = stateHTML;
+
+                // Display results
+                let resultsText = 'QFT Output State Amplitudes:\n\n';
+                for (let i = 0; i < 8; i++) {
+                    const bitString = i.toString(2).padStart(3, '0');
+                    const amplitude = qftState.getAmplitude(i);
+                    resultsText += `|${bitString}⟩: ${amplitude.re.toFixed(3)} + ${amplitude.im.toFixed(3)}i   (Magnitude: ${Math.sqrt(amplitude.re*amplitude.re + amplitude.im*amplitude.im).toFixed(3)})\n`;
+                }
+                resultsDiv.textContent = resultsText;
+                
+                console.log('QFT demo completed successfully!');
+            } catch (error) {
+                resultsDiv.textContent = 'Error running QFT demo: ' + error.message;
+                console.error('QFT demo error:', error);
+            }
+        });
+
+        // QNN Demo
+        document.getElementById('run-qnn-demo').addEventListener('click', async function() {
+            const resultsDiv = document.getElementById('qnn-results');
+            const archVizDiv = document.getElementById('qnn-architecture-viz');
+            const resultsVizDiv = document.getElementById('qnn-results-viz');
+            resultsDiv.innerHTML = 'Running QNN demo...';
+            archVizDiv.innerHTML = 'Generating architecture...';
+            resultsVizDiv.innerHTML = 'Running classification...';
+
+            try {
+                console.log('Creating QNN...');
+                // Define a simple QNN architecture
+                const qnn = new QuantumNeuralNetwork({ name: 'SimpleClassifier' });
+                const inputQubits = 2;
+                const outputQubits = 1; // For binary classification
+
+                // Add layers (example: input encoding + variational layer)
+                qnn.addLayer(new VariationalQuantumLayer({
+                    name: 'input_encoding',
+                    inputQubits: inputQubits,
+                    outputQubits: inputQubits, // Keep same size for this example
+                    depth: 1, // Simple encoding layer
+                    encoding: 'angle', // Example encoding
+                    entanglement: 'linear'
+                }));
+                qnn.addLayer(new VariationalQuantumLayer({
+                    name: 'variational_layer',
+                    inputQubits: inputQubits,
+                    outputQubits: outputQubits, // Output layer
+                    depth: 2, // Deeper variational layer
+                    entanglement: 'full'
+                }));
+                console.log('QNN created:', qnn);
+
+                // --- Placeholder Visualization & Execution ---
+                // In a real scenario, you'd visualize the network structure
+                archVizDiv.innerHTML = `
+                    <p><strong>Network:</strong> ${qnn.name}</p>
+                    <p><strong>Layers:</strong></p>
+                    <ul>
+                        ${qnn.layers.map(layer => `<li>${layer.name} (${layer.inputQubits} -> ${layer.outputQubits} qubits, depth ${layer.depth})</li>`).join('')}
+                    </ul>
+                    <p>(Full visualization requires dedicated library)</p>
+                `;
+
+                // Generate dummy input data (e.g., two features)
+                const dummyInput = [0.3, 0.8]; // Example input vector
+                console.log('Dummy Input:', dummyInput);
+
+                // --- Placeholder Prediction ---
+                // This requires implementing the `predict` method in QuantumNeuralNetwork
+                // which involves encoding data, running circuits, and measuring.
+                // For now, simulate a result.
+                console.log('Simulating prediction...');
+                // const predictionResult = await qnn.predict(dummyInput); // Needs implementation
+                const simulatedProb = Math.random(); // Simulate probability of class 1
+                const predictedClass = simulatedProb > 0.5 ? 1 : 0;
+                console.log('Simulated Prediction (Prob Class 1):', simulatedProb);
+
+                resultsVizDiv.innerHTML = `
+                    <p><strong>Input Data:</strong> [${dummyInput.join(', ')}]</p>
+                    <p><strong>Predicted Probability (Class 1):</strong> ${simulatedProb.toFixed(3)}</p>
+                    <p><strong>Predicted Class:</strong> ${predictedClass}</p>
+                    <p>(Prediction logic is currently simulated)</p>
+                `;
+
+                // --- Placeholder Training Info ---
+                resultsDiv.textContent = `
+QNN Demo Run Complete (Simulation)
+
+Network Architecture:
+- Name: ${qnn.name}
+- Layers: ${qnn.layers.length}
+  - ${qnn.layers.map(l => `${l.name} (${l.inputQubits} -> ${l.outputQubits})`).join('\n  - ')}
+
+Prediction Simulation:
+- Input: [${dummyInput.join(', ')}]
+- Simulated Prob(Class 1): ${simulatedProb.toFixed(3)}
+- Predicted Class: ${predictedClass}
+
+Note: Training loop and actual quantum circuit execution are not implemented in this browser demo.
+                `;
+
+                console.log('QNN demo simulation completed!');
+            } catch (error) {
+                resultsDiv.textContent = 'Error running QNN demo: ' + error.message;
+                console.error('QNN demo error:', error);
+                archVizDiv.innerHTML = `<p style="color: red;">Error</p>`;
+                resultsVizDiv.innerHTML = `<p style="color: red;">Error</p>`;
+            }
+        });
+
+        // Agent Demo (Placeholder)
+        document.getElementById('run-agent-demo').addEventListener('click', function() {
+            document.getElementById('agent-results').textContent = 'Agent demo implementation pending. This would demonstrate an autonomous agent navigating an environment.';
+        });
+        
+        document.getElementById('run-qlang-demo').addEventListener('click', async function() {
+            const resultsDiv = document.getElementById('qlang-results');
+            const codeVizDiv = document.getElementById('qlang-code-viz');
+            resultsDiv.innerHTML = 'Running quantum language demo...';
+            
+            try {
+                // Example QiPAI language code
+                const code = `
+                    // Bell state circuit
+                    circuit Bell {
+                        // Define qubits
+                        qubit q0;
+                        qubit q1;
+                        
+                        // Create Bell state
+                        apply h to q0;
+                        apply cnot to q1 controlled by q0;
+                    }
+                `;
+                
+                // Display code
+                codeVizDiv.innerHTML = `<pre>${code}</pre>`;
+                
+                // Compile code
+                const circuits = compileQiPAICode(code);
+                
+                if (!circuits) {
+                    resultsDiv.textContent = 'Compilation failed!';
+                    return;
+                }
+                
+                // Get Bell circuit
+                const bellCircuit = circuits.Bell;
+
+                // Visualize compiled circuit directly
+                const circuitVisualizer = new CircuitVisualizer();
+                const circuitHTML = circuitVisualizer.generateHTML(bellCircuit);
+                document.getElementById('qlang-circuit-viz').innerHTML = circuitHTML;
+
+                // Run circuit
+                const initialState = new QTensor(2);
+                const bellState = bellCircuit.run(initialState);
+                
+                // Display results
+                let resultsText = 'QiPAI Language Compilation Successful!\n\n';
+                resultsText += 'Circuit: Bell\n';
+                resultsText += `Qubits: ${bellCircuit.numQubits}\n`;
+                resultsText += `Gates: ${bellCircuit.gates.length}\n\n`;
+                resultsText += 'Bell State Amplitudes:\n';
+                
+                for (let i = 0; i < 4; i++) {
+                    const bitString = i.toString(2).padStart(2, '0');
+                    const amplitude = bellState.getAmplitude(i);
+                    resultsText += `|${bitString}⟩: ${amplitude.re.toFixed(3)} + ${amplitude.im.toFixed(3)}i\n`;
+                }
+                
+                resultsDiv.textContent = resultsText;
+                
+                console.log('Language demo completed successfully!');
+            } catch (error) {
+                resultsDiv.textContent = 'Error running language demo: ' + error.message;
+                console.error('Language demo error:', error);
+            }
+        });
+        
+        // Don't auto-run demos on page load to avoid errors
+        // document.getElementById('run-bell-demo').click();
+    </script>
+</body>
+</html>

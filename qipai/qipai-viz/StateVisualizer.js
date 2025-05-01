@@ -7,6 +7,7 @@
  */
 
 import * as qMath from '../math/qmath.js';
+import { QTensor } from '../core/qTensor.js'; // Import QTensor
 
 /**
  * Quantum State Visualizer
@@ -50,10 +51,19 @@ export class StateVisualizer {
      * @returns {string} SVG representation
      */
     generateProbabilityBarsSVG(state, options = {}) {
+        // Removed previous debug logging
+
         const showPhase = options.showPhase !== undefined ? options.showPhase : false;
         const logScale = options.logScale !== undefined ? options.logScale : false;
-        
-        const numStates = 2 ** state.numQubits;
+
+        // Check if state is valid before proceeding
+        if (!state || typeof state.getAmplitude !== 'function' || typeof state.numQubits !== 'number') {
+             console.error('Invalid state object passed to generateProbabilityBarsSVG:', state);
+             return '<div style="color: red; padding: 10px; border: 1px solid red;">Error: Invalid state object received by visualizer.</div>';
+        }
+
+        const numQubits = state.numQubits; // Use numQubits after validation
+        const numStates = 2 ** numQubits;
         const barWidth = Math.min(30, Math.max(10, (this.width - 100) / numStates));
         const maxHeight = this.height - 100;
         
@@ -61,10 +71,11 @@ export class StateVisualizer {
         const probabilities = [];
         const phases = [];
         for (let i = 0; i < numStates; i++) {
+            // Removed loop debug logging
             const amplitude = state.getAmplitude(i);
             const probability = qMath.squaredMagnitude(amplitude);
             const phase = qMath.phase(amplitude);
-            
+
             probabilities.push(probability);
             phases.push(phase);
         }
